@@ -250,7 +250,7 @@ function HomePageContent() {
                       <p className="text-sm font-semibold text-card-foreground" >{session.user.name}</p>
                       <p className="text-xs text-muted-foreground truncate" >{session.user.email}</p>
                     </div>
-                    <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-card-foreground hover:bg-muted">Pengaturan</Link>
+                    <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-card-foreground hover:bg-muted">Dashboard</Link>
                     <a href="#" onClick={(e) => { e.preventDefault(); setDropdownOpen(false); handleOpenLogoutModal(); }} className="block px-4 py-2 text-sm text-destructive-foreground hover:bg-muted">Logout</a>
                   </div>
                 </div>
