@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Toaster, toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// Komponen untuk menampilkan kerangka loading
+
 const SkeletonCard = () => (
   <div className="p-5 bg-card border border-border rounded-lg shadow-sm animate-pulse">
     <div className="h-6 bg-muted-foreground/20 rounded w-3/4 mb-2"></div>
@@ -16,7 +16,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-// Komponen untuk Modal Konfirmasi Logout
+
 const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
   if (!isOpen) return null;
   return (
@@ -35,7 +35,7 @@ const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
   );
 };
 
-// Komponen Avatar khusus untuk Navbar
+
 const NavbarAvatar = ({ name, rank }) => {
   const avatarUrl = `https://robohash.org/${encodeURIComponent(name || 'user')}?set=set4&size=64x64`;
   return (
@@ -48,7 +48,7 @@ const NavbarAvatar = ({ name, rank }) => {
   );
 };
 
-// Komponen Modal "Kredit Habis"
+
 const InsufficientCreditsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
@@ -66,7 +66,7 @@ const InsufficientCreditsModal = ({ isOpen, onClose }) => {
 };
 
 
-// Komponen inti halaman yang menggunakan hooks client-side
+
 function HomePageContent() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
@@ -109,14 +109,14 @@ function HomePageContent() {
     }
   };
 
-  // Efek untuk membaca query dari URL saat halaman dimuat
+  
   useEffect(() => {
     const urlQuery = searchParams.get('q');
     if (urlQuery) {
       setQuery(urlQuery);
       handleSearch(urlQuery);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   useEffect(() => {
@@ -324,8 +324,6 @@ function HomePageContent() {
   );
 }
 
-
-// Komponen utama sekarang menjadi wrapper Suspense
 export default function Home() {
   return (
     <>
