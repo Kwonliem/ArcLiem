@@ -109,14 +109,14 @@ function HomePageContent() {
     }
   };
 
-  
+
   useEffect(() => {
     const urlQuery = searchParams.get('q');
     if (urlQuery) {
       setQuery(urlQuery);
       handleSearch(urlQuery);
     }
-    
+
   }, []);
 
   useEffect(() => {
@@ -266,7 +266,7 @@ function HomePageContent() {
 
         <div className="w-full text-center mb-10 pt-24">
           <h1 className="text-5xl md:text-6xl font-bold font-heading text-primary">Arc Liem</h1>
-          <p className="text-lg md:text-xl text-muted-foreground mt-2">Platform Pencarian Artikel Ilmiah Open Access</p>
+          <p className="text-lg md:text-xl text-muted-foreground mt-2">Open Access, Open Mind, Open Future.</p>
         </div>
 
         <div className="w-full max-w-3xl">
@@ -279,6 +279,12 @@ function HomePageContent() {
         </div>
 
         <div className="w-full max-w-3xl mt-8">
+
+          {status === 'unauthenticated' && (
+            <div className="p-4 mb-6 text-sm text-blue-200 bg-blue-900/50 border border-blue-500/30 rounded-lg text-center" role="alert">
+              <Link href="/login" className="font-bold underline">Login</Link> atau <Link href="/register" className="font-bold underline">daftar</Link> untuk bisa men-download jurnal dan mendapatkan poin!
+            </div>
+          )}
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, index) => <SkeletonCard key={index} />)}
