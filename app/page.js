@@ -199,7 +199,7 @@ function HomePageContent() {
     setIsLoggingOut(true);
     toast.success('Anda telah berhasil logout.');
     setTimeout(() => {
-      signOut({ callbackUrl: '/login' });
+      signOut({ callbackUrl: '/' });
     }, 1500);
   };
 
