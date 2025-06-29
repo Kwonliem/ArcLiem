@@ -1,10 +1,10 @@
 'use client';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Toaster, toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-
 
 const SkeletonCard = () => (
   <div className="p-5 bg-card border border-border rounded-lg shadow-sm animate-pulse">
@@ -15,8 +15,6 @@ const SkeletonCard = () => (
     <div className="h-4 bg-muted-foreground/20 rounded w-5/6"></div>
   </div>
 );
-
-
 const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
   if (!isOpen) return null;
 
@@ -35,8 +33,6 @@ const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
     </div>
   );
 };
-
-
 const NavbarAvatar = ({ name, rank }) => {
   const avatarUrl = `https://robohash.org/${encodeURIComponent(name || 'user')}?set=set4&size=64x64`;
   return (
@@ -48,8 +44,6 @@ const NavbarAvatar = ({ name, rank }) => {
     </div>
   );
 };
-
-
 const InsufficientCreditsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
@@ -65,69 +59,68 @@ const InsufficientCreditsModal = ({ isOpen, onClose }) => {
     </div>
   );
 };
-
 export default function Home() {
   const { data: session, status, update } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [downloading, setDownloading] = useState(null);
-  const [isLogoutModalOpen, setLogoutModalOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const [isInsufficientCreditsModalOpen, setInsufficientCreditsModalOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState([]); 
+    const [loading, setLoading] = useState(false);
+    const [downloading, setDownloading] = useState(null); 
+    const [isLogoutModalOpen, setLogoutModalOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isDropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+    const [isInsufficientCreditsModalOpen, setInsufficientCreditsModalOpen] = useState(false);
 
-  useEffect(() => {
-    const urlQuery = searchParams.get('q');
-    if (urlQuery) {
-      setQuery(urlQuery);
-      handleSearch(urlQuery);
-    }
-  }, []);
+    
+    useEffect(() => {
+        const urlQuery = searchParams.get('q');
+        if (urlQuery) {
+            setQuery(urlQuery);
+            handleSearch(urlQuery);
+        }
+    
+    }, []);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownRef]);
+    useEffect(() => {
+        function handleClickOutside(event) {
+          if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setDropdownOpen(false);
+          }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [dropdownRef]);
 
 
-  const handleSearch = async (searchQueryParam) => {
-    const currentQuery = typeof searchQueryParam === 'string' ? searchQueryParam : query;
-    if (!currentQuery.trim()) {
-      toast.error("Kolom pencarian tidak boleh kosong.");
-      return;
-    }
-
-    router.push(`/?q=${encodeURIComponent(currentQuery)}`, { scroll: false });
-
-    setLoading(true);
-    setResults([]);
-    try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Gagal mengambil data');
-      }
-      const data = await response.json();
-      setResults(data.results || []);
-      if ((data.results || []).length === 0) {
-        toast.error("Tidak ada artikel yang ditemukan untuk query tersebut.");
-      }
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleSearch = async (searchQueryParam) => {
+        const currentQuery = typeof searchQueryParam === 'string' ? searchQueryParam : query;
+        if (!currentQuery.trim()) {
+            toast.error("Kolom pencarian tidak boleh kosong.");
+            return;
+        }
+        router.push(`/?q=${encodeURIComponent(currentQuery)}`, { scroll: false });
+        setLoading(true);
+        setResults([]);
+        try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Gagal mengambil data');
+            }
+            const data = await response.json();
+            setResults(data.results || []);
+            if ((data.results || []).length === 0) {
+                toast.error("Tidak ada artikel yang ditemukan untuk query tersebut.");
+            }
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   const handleDownload = async (article) => {
     if (!session) {
@@ -326,4 +319,18 @@ export default function Home() {
       </main>
     </>
   );
+}
+export default function Home() {
+    return (
+        <>
+            <Toaster position="top-center" reverseOrder={false} />
+            <Suspense fallback={
+                <div className="flex justify-center items-center h-screen">
+                    <p className="text-lg">Memuat halaman...</p>
+                </div>
+            }>
+                <HomePageContent />
+            </Suspense>
+        </>
+    );
 }
