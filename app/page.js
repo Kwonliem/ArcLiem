@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Toaster, toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+// Komponen untuk menampilkan kerangka loading
 const SkeletonCard = () => (
   <div className="p-5 bg-card border border-border rounded-lg shadow-sm animate-pulse">
     <div className="h-6 bg-muted-foreground/20 rounded w-3/4 mb-2"></div>
@@ -15,14 +15,15 @@ const SkeletonCard = () => (
     <div className="h-4 bg-muted-foreground/20 rounded w-5/6"></div>
   </div>
 );
+
+// Komponen untuk Modal Konfirmasi Logout
 const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4">
       <div className="bg-card p-6 rounded-lg shadow-xl max-w-sm w-full border border-border">
         <h2 className="text-xl font-heading font-bold text-card-foreground">Konfirmasi Logout</h2>
-        <p className="mt-2 text-muted-foreground">Apakah Anda yakin ingin keluar dari sesi Anda?</p>
+        <p className="mt-2 text-muted-foreground">Apakah Anda yakin ingin keluar?</p>
         <div className="mt-6 flex justify-end gap-4">
           <button onClick={onClose} disabled={isLoggingOut} className="btn-secondary">Batal</button>
           <button onClick={onConfirm} disabled={isLoggingOut} className="bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-wait">
@@ -33,17 +34,21 @@ const LogoutModal = ({ isOpen, onClose, onConfirm, isLoggingOut }) => {
     </div>
   );
 };
+
+// Komponen Avatar khusus untuk Navbar
 const NavbarAvatar = ({ name, rank }) => {
   const avatarUrl = `https://robohash.org/${encodeURIComponent(name || 'user')}?set=set4&size=64x64`;
   return (
     <div className="relative w-10 h-10">
       <img src={avatarUrl} alt={`Avatar untuk ${name}`} className="h-full w-full rounded-full object-cover bg-muted shadow-md" />
       {rank && (
-        <img src={rank.frameUrl} alt={`${rank.name} Frame`} className="absolute inset-0 h-full w-full transform scale-[1.65] pointer-events-none" />
+        <img src={rank.frameUrl} alt={`${rank.name} Frame`} className="absolute inset-0 h-full w-full transform scale-[1.60] pointer-events-none" />
       )}
     </div>
   );
 };
+
+// Komponen Modal "Kredit Habis"
 const InsufficientCreditsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
@@ -52,75 +57,78 @@ const InsufficientCreditsModal = ({ isOpen, onClose }) => {
         <h2 className="text-4xl font-heading font-bold text-white mb-2">Kredit Habis!</h2>
         <p className="text-purple-200 mb-6">Anda membutuhkan lebih banyak kredit untuk melanjutkan download.</p>
         <Link href="/pricing" className="btn-primary text-lg px-8 py-3 animate-pulse">
-          Lihat Pilihan Kredit
+          Beli Kredit Sekarang
         </Link>
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
       </div>
     </div>
   );
 };
-export default function Home() {
+
+
+// Komponen inti halaman yang menggunakan hooks client-side
+function HomePageContent() {
   const { data: session, status, update } = useSession();
-    const router = useRouter();
-    const searchParams = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]); 
-    const [loading, setLoading] = useState(false);
-    const [downloading, setDownloading] = useState(null); 
-    const [isLogoutModalOpen, setLogoutModalOpen] = useState(false);
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isDropdownOpen, setDropdownOpen] = useState(false);
-    const dropdownRef = useRef(null);
-    const [isInsufficientCreditsModalOpen, setInsufficientCreditsModalOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(null);
+  const [isLogoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [isInsufficientCreditsModalOpen, setInsufficientCreditsModalOpen] = useState(false);
 
-    
-    useEffect(() => {
-        const urlQuery = searchParams.get('q');
-        if (urlQuery) {
-            setQuery(urlQuery);
-            handleSearch(urlQuery);
-        }
-    
-    }, []);
+  const handleSearch = async (searchQueryParam) => {
+    const currentQuery = typeof searchQueryParam === 'string' ? searchQueryParam : query;
+    if (!currentQuery.trim()) {
+      toast.error("Kolom pencarian tidak boleh kosong.");
+      return;
+    }
+    router.push(`/?q=${encodeURIComponent(currentQuery)}`, { scroll: false });
+    setLoading(true);
+    setResults([]);
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Gagal mengambil data');
+      }
+      const data = await response.json();
+      setResults(data.results || []);
+      if ((data.results || []).length === 0) {
+        toast.error("Tidak ada artikel yang ditemukan untuk query tersebut.");
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        function handleClickOutside(event) {
-          if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-            setDropdownOpen(false);
-          }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [dropdownRef]);
+  // Efek untuk membaca query dari URL saat halaman dimuat
+  useEffect(() => {
+    const urlQuery = searchParams.get('q');
+    if (urlQuery) {
+      setQuery(urlQuery);
+      handleSearch(urlQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownRef]);
 
-    const handleSearch = async (searchQueryParam) => {
-        const currentQuery = typeof searchQueryParam === 'string' ? searchQueryParam : query;
-        if (!currentQuery.trim()) {
-            toast.error("Kolom pencarian tidak boleh kosong.");
-            return;
-        }
-        router.push(`/?q=${encodeURIComponent(currentQuery)}`, { scroll: false });
-        setLoading(true);
-        setResults([]);
-        try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}`);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Gagal mengambil data');
-            }
-            const data = await response.json();
-            setResults(data.results || []);
-            if ((data.results || []).length === 0) {
-                toast.error("Tidak ada artikel yang ditemukan untuk query tersebut.");
-            }
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
 
   const handleDownload = async (article) => {
     if (!session) {
@@ -132,7 +140,6 @@ export default function Home() {
       setInsufficientCreditsModalOpen(true);
       return;
     }
-
     const oldRank = session.user.rank;
     const downloadLink = article.downloadUrl;
     setDownloading(article.id);
@@ -144,10 +151,8 @@ export default function Home() {
       });
       const creditData = await creditRes.json();
       if (!creditRes.ok) throw new Error(creditData.message);
-
       toast.success('Download berhasil! Kredit -20, Poin +20 ✨');
       const newSession = await update();
-
       const newRank = newSession?.user?.rank;
       if (newRank && oldRank && newRank.name !== oldRank.name) {
         setTimeout(() => {
@@ -157,7 +162,6 @@ export default function Home() {
           });
         }, 1000);
       }
-
       const pdfRes = await fetch('/api/fetch-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,7 +210,6 @@ export default function Home() {
 
   return (
     <>
-      <Toaster position="top-center" reverseOrder={false} />
       <InsufficientCreditsModal isOpen={isInsufficientCreditsModalOpen} onClose={() => setInsufficientCreditsModalOpen(false)} />
       <LogoutModal
         isOpen={isLogoutModalOpen}
@@ -263,11 +266,11 @@ export default function Home() {
 
         <div className="w-full text-center mb-10 pt-24">
           <h1 className="text-5xl md:text-6xl font-bold font-heading text-primary">Arc Liem</h1>
-          <p className="text-lg md:text-xl text-muted-foreground mt-2">Open Access, Open Mind, Open Future.</p>
+          <p className="text-lg md:text-xl text-muted-foreground mt-2">Platform Pencarian Artikel Ilmiah Open Access</p>
         </div>
 
-        <div className="w-full max-w-2xl">
-          <div className="flex gap-2">
+        <div className="w-full max-w-3xl">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Cari berdasarkan kata kunci atau DOI..." className="input-form flex-grow p-4" disabled={loading} />
             <button onClick={handleSearch} disabled={loading} className="btn-primary px-8 py-4">
               {loading ? 'Mencari...' : 'Cari'}
@@ -320,17 +323,20 @@ export default function Home() {
     </>
   );
 }
+
+
+// Komponen utama sekarang menjadi wrapper Suspense
 export default function Home() {
-    return (
-        <>
-            <Toaster position="top-center" reverseOrder={false} />
-            <Suspense fallback={
-                <div className="flex justify-center items-center h-screen">
-                    <p className="text-lg">Memuat halaman...</p>
-                </div>
-            }>
-                <HomePageContent />
-            </Suspense>
-        </>
-    );
+  return (
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      <Suspense fallback={
+        <div className="flex justify-center items-center h-screen bg-background">
+          <p className="text-lg font-heading text-foreground">Memuat halaman...</p>
+        </div>
+      }>
+        <HomePageContent />
+      </Suspense>
+    </>
+  );
 }
